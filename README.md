@@ -12,4 +12,4 @@ If no output is specified, it will use the same name as demo file.  You can also
 * videoP (loda)
 
 ### Credits ###
-Teh
+* dpadgett (Teh)
