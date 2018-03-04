@@ -13,7 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C5E50C4D-5239-45F2-A0C7-F7062A82859A}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>DemoTrimmer</RootNamespace>
+    <RootNamespace>demo2trail</RootNamespace>
     <ProjectName>demo2trail</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
