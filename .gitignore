@@ -8,6 +8,7 @@ Release/
 *.vcxproj.user
 *.vcxproj.filters
 *.db
+*.VC.db
 *.opendb
 ipch/
 *.suo
