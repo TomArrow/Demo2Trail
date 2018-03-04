@@ -8,8 +8,8 @@ Usage: /demo2Trail <demo file name> <cfg file name (optional)>
   
 If no output is specified, it will use the same name as demo file.  You can also drag a demo file into the exe, and it will treat that as the input file.
 
-##Maintainers##
+## Maintainers ##
 * videoP (loda)
 
-###Credits###
+### Credits ###
 Teh
