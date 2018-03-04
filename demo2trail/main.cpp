@@ -1,29 +1,11 @@
-// DemoTrimmer.cpp : Defines the entry point for the console application.
+// main.cpp : Defines the entry point for the console application.
 //
 
 #include "deps.h" //only need CL_ReadDemoMessage from this?
-//#include "client/client.h"
 #include "demo_utils.h"
 #include "demo_common.h"
 #include "utils.h"
-
 #include "q_string.h" //added
-
-//from deps.h
-//#include "qcommon/q_shared.h"
-//#include "qcommon/qcommon.h"
-
-//from client.h
-//#include "qcommon/q_shared.h"
-//#include "qcommon/qcommon.h"
-//#include "rd-common/tr_public.h"
-//#include "keys.h"
-//#include "snd_public.h"
-//#include "game/bg_public.h"
-//#include "cgame/cg_public.h"
-//#include "ui/ui_public.h"
-
-//qboolean CL_ReadDemoMessage(fileHandle_t demofile, msg_t *msg);
 
 #ifdef WIN32
 #include <io.h>
@@ -32,18 +14,15 @@
 
 int main(int argc, char** argv)
 {
-	//cl_shownet->integer = 0;
-	//printf( "JKDemoMetadata v" VERSION " loaded\n");
+	//printf( "Demo2Trail v" VERSION " loaded\n");
 	char *demoFileName = NULL;
 	char *trailFileName = NULL;
 
 	if (argc == 2) {//Input file specified, use same name for output file 
 		char *input = argv[1];
 
-		//Possible drag/drop
-		//Check if extension..
-		if (COM_CompareExtension(input, ".dm_26")) {
-			char temp[MAX_QPATH]; //wtf
+		if (COM_CompareExtension(input, ".dm_26")) { //Possible drag/drop, check extension and strip
+			char temp[256]; //wtf - max path?
 
 			//printf("Extension found\n");
 			COM_StripExtension(input, temp, sizeof(temp));
@@ -73,49 +52,6 @@ int main(int argc, char** argv)
 
 	printf("Input file: %s Output file: %s\n", demoFileName, trailFileName);
 
-
-
-	/*
-	if ( argc < 3 ) {
-		printf( "No file specified.\n"
-				"Usage: \"%s\" filename.dm_26 outfile.cfg\n", argv[0] );
-		//system( "pause" );
-		return -1;
-	}
-	*/
-
-	/*
-	if (argc < 5) {
-		printf("No file specified.\n"
-			"Usage: \"%s\" filename.dm_26 outfile.dm_26 starthh:mm:ss.sss endhh:mm:ss.sss\n", argv[0]);
-		//system( "pause" );
-		return -1;
-	}
-	*/
-
-	/*
-	if ( strlen( argv[3] ) != 12 ) {
-		printf( "Invalid start time format %s.  Must be hh:mm:ss.sss\n", argv[3] );
-		return -1;
-	}
-	argv[3][2] = argv[3][5]  = argv[3][8] = '\0';
-	int startTime = atoi( argv[3] );
-	startTime = ( startTime * 60 ) + atoi( argv[3] + 3 );
-	startTime = ( startTime * 60 ) + atoi( argv[3] + 6 );
-	startTime = ( startTime * 1000 ) + atoi( argv[3] + 9 );
-
-	if ( strlen( argv[4] ) != 12 ) {
-		printf( "Invalid end time format %s.  Must be hh:mm:ss.sss\n", argv[4] );
-		return -1;
-	}
-	argv[4][2] = argv[4][5]  = argv[4][8] = '\0';
-	int endTime = atoi( argv[4] );
-	endTime = ( endTime * 60 ) + atoi( argv[4] + 3 );
-	endTime = ( endTime * 60 ) + atoi( argv[4] + 6 );
-	endTime = ( endTime * 1000 ) + atoi( argv[4] + 9 );
-	*/
-
-	//char *filename = argv[1];
 	fileHandle_t fp;
 	FS_FOpenFileRead(demoFileName, &fp, qfalse );
 	if ( !fp ) {
@@ -124,34 +60,16 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	//char *outFilename = argv[2];
-	FILE *trailFile;
-	if ( !Q_strncmp(trailFileName, "-", 2 ) ) {
-		trailFile = stdout;
-#ifdef WIN32
-		setmode(fileno(stdout), O_BINARY);
-#else
-		freopen( NULL, "wb", stdout );
-#endif
-	} else {
-		trailFile = fopen(trailFileName, "wb" );
-	}
+	FILE *trailFile = fopen(trailFileName, "wb" );
 	if ( !trailFile) {
 		printf( "Couldn't open output file\n" );
 		return -1;
 	}
 
-
-	//fileHandle_t tf;
-	//FS_FOpenFileWrite(outFilename, qfalse);
-
-
-
-
-	int framesSaved = 0;
 	qboolean demoFinished = qfalse;
 	qboolean startedRace = qfalse;
-	char buf[8192] = {0};//noo
+	vec3_t lastOrigin = {0};
+	char buf[8192] = {0};
 	while ( !demoFinished ) {
 		msg_t msg;
 		byte msgData[ MAX_MSGLEN ];
@@ -183,37 +101,6 @@ int main(int argc, char** argv)
 			if ( cmd[0] ) {
 				firstServerCommand = ctx->clc.lastExecutedServerCommand;
 			}
-			if ( !strcmp( cmd, "cs" ) ) {
-				CL_ConfigstringModified(); //dont need?
-			}
-		}
-
-		/*if ( getCurrentTime() > endTime ) {
-			// finish up
-			int len = -1;
-			fwrite (&len, 4, 1, metaFile);
-			fwrite (&len, 4, 1, metaFile);
-			printf("stopping 3 %i %i\n", getCurrentTime(), endTime);
-			break;
-		} else */
-		if ( framesSaved > 0 ) {
-
-			//printf("Origin %.0f %.0f %.0f\n", ctx->cl.snap.ps.origin[0], ctx->cl.snap.ps.origin[1], ctx->cl.snap.ps.origin[2]);
-
-			if ( framesSaved > Q_max( 10, ctx->cl.snap.messageNum - ctx->cl.snap.deltaNum ) ) { //what
-				//CL_WriteDemoMessage( &msg, 0, metaFile );
-			} else {
-				//writeDeltaSnapshot( firstServerCommand, metaFile, qfalse );
-			}
-			framesSaved++;
-		} else /*if ( getCurrentTime() > startTime )*/ {
-
-			//printf("Origin START? %.0f %.0f %.0f\n", ctx->cl.snap.ps.origin[0], ctx->cl.snap.ps.origin[1], ctx->cl.snap.ps.origin[2]);
-
-			//writeDemoHeader( metaFile );
-			//writeDeltaSnapshot( firstServerCommand, metaFile, qtrue );
-			// copy rest
-			framesSaved = 1;
 		}
 
 		//How 2 trim neadless shit at start/end(?) of demo:
@@ -226,66 +113,45 @@ int main(int argc, char** argv)
 		//If current origin is same as previous... don't write anything...? 
 		//(this fucks the timing.. but really are there any courses where people pause - besides mountain? and if so it can be done without the pause?)
 
-
-		if (!startedRace && ctx->cl.snap.ps.duelTime) {
-			Q_strncpyz(buf, "", sizeof(buf));
+		if (!startedRace && ctx->cl.snap.ps.duelTime) { //Keep track of timer resets, clear ENTIRE FILE if it happens
 			startedRace = qtrue;
-			//printf("Starting race\n");
+			Q_strncpyz(buf, "", sizeof(buf));
+			fclose(fopen(trailFileName, "w"));
+			//printf("Restarting race, clearing file\n");
 		}
-		else if (!ctx->cl.snap.ps.duelTime && startedRace) { //Oh no this will only show last second of race after finishing if we reset here.
+		else if (!ctx->cl.snap.ps.duelTime && startedRace) {
 			startedRace = qfalse;
 			//printf("Stopping race\n");
-			//Reset file
-			//Q_strncpyz(buf, "", sizeof(buf)); //2789
 		}
 
+		if (ctx->cl.snap.ps.duelTime) { //Only write if they are in a race
+			if (!VectorCompare(ctx->cl.snap.ps.origin, lastOrigin)) //Dont write if they are standing still
+			{
+				char *tmpMsg = NULL;
+				tmpMsg = va("%i %i %i\n", (int)(ctx->cl.snap.ps.origin[0] + 0.5f), (int)(ctx->cl.snap.ps.origin[1] + 0.5f), (int)(ctx->cl.snap.ps.origin[2] + 0.5f));
 
-		{
-			char *tmpMsg = NULL;
-			tmpMsg = va("%i %i %i\n", (int)(ctx->cl.snap.ps.origin[0] + 0.5f), (int)(ctx->cl.snap.ps.origin[1] + 0.5f), (int)(ctx->cl.snap.ps.origin[2] + 0.5f));
+				VectorCopy(ctx->cl.snap.ps.origin, lastOrigin);
 		
-			if (strlen(buf) + strlen(tmpMsg) >= sizeof(buf)) {
-				//Write to file
+				if (strlen(buf) + strlen(tmpMsg) >= sizeof(buf)) { //Write to file
+					fwrite(buf, strlen(buf), 1, trailFile);
+					Q_strncpyz(buf, "", sizeof(buf)); //buf[0] = '\0'; ?
+					//printf("Resetting buf!\n");
+				}
 
-				//FS_Write(buf, strlen(buf), tf);
-				fwrite(buf, strlen(buf), 1, trailFile);
-				Q_strncpyz(buf, "", sizeof(buf));
-				//printf("resetting buf!\n");
+				//printf("startedRace? %i time? %i\n", startedRace, ctx->cl.snap.ps.duelTime);
 
-				//buf[0] = '\0'; //instead of cpyz??
+				Q_strcat(buf, sizeof(buf), tmpMsg);
+			}/*
+			else {
+				printf("Standing still! - (%i %i %i)\n", (int)(ctx->cl.snap.ps.origin[0] + 0.5f), (int)(ctx->cl.snap.ps.origin[1] + 0.5f), (int)(ctx->cl.snap.ps.origin[2] + 0.5f));
 			}
-
-			//printf("race? %i time? %i\n", startedRace, ctx->cl.snap.ps.duelTime);
-
-			//if racetimer ?  to avoid shit at end of file
-			Q_strcat(buf, sizeof(buf), tmpMsg);
+			*/
 		}
-
-
-
-
-
-
-
-
-
 
 	}
 
 	//Write remaining buf to file
-
 	fwrite(buf, strlen(buf), 1, trailFile);
-
-	/*int bufSize = 1024 * 10;
-	char *buf = (char *) calloc( bufSize, 1 );
-	int lenRead = 0;
-
-	// the rest should just work.  in theory lol.
-	while ( ( lenRead = FS_Read( buf, bufSize, fp ) ) > 0 ) {
-		fwrite( buf, 1, lenRead, metaFile );
-	}
-
-	free( buf );*/
 
 	FS_FCloseFile( fp );
 	fclose( trailFile );
