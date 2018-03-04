@@ -7,5 +7,7 @@ Release/
 *.dm_2[5-6]
 *.vcxproj.user
 *.vcxproj.filters
+*.db
+*.opendb
 ipch/
 *.suo
