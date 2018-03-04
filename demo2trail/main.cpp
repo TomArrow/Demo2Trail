@@ -103,7 +103,7 @@ int main(int argc, char** argv)
 			}
 		}
 
-		//How 2 trim neadless shit at start/end(?) of demo:
+		//How 2 trim needless shit at start/end(?) of demo:
 
 		//If tele bit was flipped, reset file?  Nvm, that will break courses with teleports.
 		//If we had a timer and now we dont, reset file.  (this fucks up after we finish course)
