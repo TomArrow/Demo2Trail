@@ -18,6 +18,9 @@ int main(int argc, char** argv)
 	char *demoFileName = NULL;
 	char *trailFileName = NULL;
 
+	//COM_GetExtension
+
+
 	if (argc == 2) {//Input file specified, use same name for output file 
 		char *input = argv[1];
 
@@ -26,11 +29,14 @@ int main(int argc, char** argv)
 
 			//printf("Extension found\n");
 			COM_StripExtension(input, temp, sizeof(temp));
-			input = va("%s", temp);
-		}
 
-		demoFileName = va("%s.dm_26", input);
-		trailFileName = va("%s.cfg", input);
+			demoFileName = va("%s", input);
+			trailFileName = va("%s.cfg", temp);
+		}
+		else { //if no extension -fixme
+			demoFileName = va("%s.dm_26", input);
+			trailFileName = va("%s.cfg", input);
+		}
 		//printf("1Input file: %s Output file: %s\n", demoFileName, trailFileName);
 		//system("pause");
 	}
@@ -38,8 +44,22 @@ int main(int argc, char** argv)
 		char *input = argv[1];
 		char *output = argv[2];
 
-		demoFileName = va("%s.dm_26", input);
-		trailFileName = va("%s.cfg", output);
+		if (COM_CompareExtension(input, ".dm_26")) { //Possible drag/drop, check extension and strip
+			demoFileName = va("%s", input);
+		}
+		else { //if no extension -fixme
+			demoFileName = va("%s.dm_26", input);
+		}
+
+		if (COM_CompareExtension(output, ".dm_26")) {
+			char temp[256]; //wtf - max path?
+
+			COM_StripExtension(output, temp, sizeof(temp));
+			trailFileName = va("%s.cfg", temp);
+		}
+		else {
+			trailFileName = va("%s.cfg", input);
+		}
 		//printf("2Input file: %s Output file: %s\n", demoFileName, trailFileName);
 		//system("pause");
 	}
@@ -70,7 +90,6 @@ int main(int argc, char** argv)
 	int lastRaceTime = 0;
 	vec3_t lastOrigin = {0};
 	char buf[8192] = {0};
-	int frames = 0;
 	qboolean dontReset;
 	while ( !demoFinished ) {
 		msg_t msg;
@@ -114,39 +133,10 @@ int main(int argc, char** argv)
 		//If current origin is same as previous... don't write anything...? 
 		//(this fucks the timing.. but really are there any courses where people pause - besides mountain? and if so it can be done without the pause?)
 
-		frames++;
-
 		if (ctx->cl.snap.ps.duelTime && ctx->cl.snap.serverTime - ctx->cl.snap.ps.duelTime > 6000) { //Dont clear file if we have gone more than 6sec into run, yikes.
-			//printf("dontreset! %i\n", frames);
+			//printf("dontreset!\n");
 			dontReset = qtrue;
 		}
-
-
-#if 0
-		if (!startedRace && ctx->cl.snap.ps.duelTime) { //Keep track of timer resets, clear ENTIRE FILE if it happens
-			startedRace = qtrue;
-			//Q_strncpyz(buf, "", sizeof(buf));
-			printf("hi1\n");
-			/*
-			fclose(trailFile);
-			FILE *trailFile2 = fopen(trailFileName, "w");
-			if (!trailFile2) {
-				printf("Couldn't open output file\n");
-				return -1;
-			}
-			fclose(trailFile2);
-			*/
-
-			//fclose(fopen(trailFileName, "w"));
-
-			//printf("Restarting race, clearing file\n");
-			printf("hi2\n");
-		}
-		else if (!ctx->cl.snap.ps.duelTime && startedRace) {
-			startedRace = qfalse;
-			//printf("Stopping race\n");
-		}
-#endif
 
 		if (!lastRaceTime && ctx->cl.snap.ps.duelTime && !dontReset) { //pathetic hack
 			//printf("Stopping race\n");
@@ -188,7 +178,7 @@ int main(int argc, char** argv)
 	FS_FCloseFile( fp );
 	fclose( trailFile );
 
-	printf("Completed\n");
+	printf("Completed\n"); //printing filenames here fucks up??? memory?
 
 	return 0;
 }

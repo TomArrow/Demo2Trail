@@ -25,7 +25,7 @@ for key in data:
     
     filename = coursename + "-" + style + extension
     try:
-        urllib.request.urlretrieve(url, "files/" + filename) # Make this multithreaded or simultaneous or something
+        urllib.request.urlretrieve(url, "demos/" + filename) # Make this multithreaded or simultaneous or something
     except Exception:
         print (filename + " could not be saved [" + str(count) + "]")
         continue
