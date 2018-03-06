@@ -12,3 +12,5 @@ Release/
 *.opendb
 ipch/
 *.suo
+*.cfg
+*.dm_26
