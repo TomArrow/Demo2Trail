@@ -67,9 +67,11 @@ int main(int argc, char** argv)
 	}
 
 	qboolean demoFinished = qfalse;
-	qboolean startedRace = qfalse;
+	int lastRaceTime = 0;
 	vec3_t lastOrigin = {0};
 	char buf[8192] = {0};
+	int frames = 0;
+	qboolean dontReset;
 	while ( !demoFinished ) {
 		msg_t msg;
 		byte msgData[ MAX_MSGLEN ];
@@ -102,27 +104,57 @@ int main(int argc, char** argv)
 				firstServerCommand = ctx->clc.lastExecutedServerCommand;
 			}
 		}
-
 		//How 2 trim needless shit at start/end(?) of demo:
 
 		//If tele bit was flipped, reset file?  Nvm, that will break courses with teleports.
 		//If we had a timer and now we dont, reset file.  (this fucks up after we finish course)
 		//If we had a timer and now we have a different timer, reset. (that fucks loopstarts?)
-		//If we have a timer now, and we didnt previously, reset file (This fucks up prejumps, but oh wel?)
+		//If we have a timer now, and we didnt previously, reset file (This fucks up prejumps, but oh wel?), also ruins it if person ends timer.. then comes back..
 
 		//If current origin is same as previous... don't write anything...? 
 		//(this fucks the timing.. but really are there any courses where people pause - besides mountain? and if so it can be done without the pause?)
 
+		frames++;
+
+		if (ctx->cl.snap.ps.duelTime && ctx->cl.snap.serverTime - ctx->cl.snap.ps.duelTime > 6000) { //Dont clear file if we have gone more than 6sec into run, yikes.
+			//printf("dontreset! %i\n", frames);
+			dontReset = qtrue;
+		}
+
+
+#if 0
 		if (!startedRace && ctx->cl.snap.ps.duelTime) { //Keep track of timer resets, clear ENTIRE FILE if it happens
 			startedRace = qtrue;
-			Q_strncpyz(buf, "", sizeof(buf));
-			fclose(fopen(trailFileName, "w"));
+			//Q_strncpyz(buf, "", sizeof(buf));
+			printf("hi1\n");
+			/*
+			fclose(trailFile);
+			FILE *trailFile2 = fopen(trailFileName, "w");
+			if (!trailFile2) {
+				printf("Couldn't open output file\n");
+				return -1;
+			}
+			fclose(trailFile2);
+			*/
+
+			//fclose(fopen(trailFileName, "w"));
+
 			//printf("Restarting race, clearing file\n");
+			printf("hi2\n");
 		}
 		else if (!ctx->cl.snap.ps.duelTime && startedRace) {
 			startedRace = qfalse;
 			//printf("Stopping race\n");
 		}
+#endif
+
+		if (!lastRaceTime && ctx->cl.snap.ps.duelTime && !dontReset) { //pathetic hack
+			//printf("Stopping race\n");
+			//also clear file.. but that crashes..?
+			Q_strncpyz(buf, "", sizeof(buf));
+		}
+
+		lastRaceTime = ctx->cl.snap.ps.duelTime;
 
 		if (ctx->cl.snap.ps.duelTime) { //Only write if they are in a race
 			if (!VectorCompare(ctx->cl.snap.ps.origin, lastOrigin)) //Dont write if they are standing still
