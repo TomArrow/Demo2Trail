@@ -13,6 +13,8 @@
 #endif
 
 #define LOOPSTARTS 0
+#define	SKIP_STILL 0
+#define METADATA 0
 #define TRAIL_BUFSIZE 8192 //Write to file in 8kb chunks
 
 int main(int argc, char** argv)
@@ -47,7 +49,6 @@ int main(int argc, char** argv)
 
 		if (COM_CompareExtension(output, ".dm_26")) {
 			char temp[256]; //wtf - max path?
-
 			COM_StripExtension(output, temp, sizeof(temp));
 			trailFileName = va("%s.cfg", temp);
 		}
@@ -78,11 +79,13 @@ int main(int argc, char** argv)
 
 	char buf[TRAIL_BUFSIZE] = { 0 };
 	qboolean demoFinished = qfalse;
+	qboolean dontReset = qfalse;
 	int lastStartTime = 0;
 	int lastRaceTimer = 0;
-	int raceTimer = 0;
+#if SKIP_STILL
 	vec3_t lastOrigin = {0};
-	qboolean dontReset;
+#endif
+	qboolean gotInfo = qfalse;
 
 	while ( !demoFinished ) {
 		msg_t msg;
@@ -112,16 +115,28 @@ int main(int argc, char** argv)
 			}
 		}
 
+#if METADATA //write detected sv_fps to first line of file
+		if (!gotInfo)
+		{
+			const char *info = ctx->cl.gameState.stringData + ctx->cl.gameState.stringOffsets[CS_SERVERINFO];
+			char fpsInfo[32] = {0};
+			int svfps = atoi(Info_ValueForKey(info, "sv_fps"));
+
+			Q_strncpyz(fpsInfo, va("sv_fps %i\n", svfps), sizeof(fpsInfo));
+			fwrite(fpsInfo, strlen(fpsInfo), 1, trailFile);
+			gotInfo = qtrue;
+		}
+#endif
+
 		//If we have a timer now, and we didnt previously, reset file (this removes resets)
 		//If we have a timer now, and its less than our previous timer, reset file (this removes loopstarts)
 		//If current origin is same as previous... don't write anything...(possibly fucks up timing, but never happens in practice)
 
 		int startTime = ctx->cl.snap.ps.duelTime;
+		int raceTimer = 0;
 				
 		if (startTime)
 			raceTimer = ctx->cl.snap.serverTime - startTime;
-		else
-			raceTimer = 0;
 
 		if (raceTimer > 6000) //Dont clear file if we have gone more than 6sec into run, yikes.
 			dontReset = qtrue;
@@ -132,14 +147,15 @@ int main(int argc, char** argv)
 #else
 			if (!lastStartTime || (raceTimer < lastRaceTimer))
 #endif
-				Q_strncpyz(buf, "", sizeof(buf));
+			{
+				Q_strncpyz(buf, "", sizeof(buf));//Also clear entire file.. how w/o crash?
+			}
 		}
 
-		lastStartTime = startTime;
-		lastRaceTimer = raceTimer;
-
 		if (startTime) { //Only write if they are in a race
+#if SKIP_STILL
 			if (!VectorCompare(ctx->cl.snap.ps.origin, lastOrigin)) //Dont write if they are standing still
+#endif
 			{
 				char *tmpMsg = NULL;
 				tmpMsg = va("%i %i %i\n", (int)(ctx->cl.snap.ps.origin[0] + 0.5f), (int)(ctx->cl.snap.ps.origin[1] + 0.5f), (int)(ctx->cl.snap.ps.origin[2] + 0.5f));
@@ -148,10 +164,14 @@ int main(int argc, char** argv)
 					Q_strncpyz(buf, "", sizeof(buf)); //buf[0] = '\0'; ?
 				}
 				Q_strcat(buf, sizeof(buf), tmpMsg);
-
+#if SKIP_STILL
 				VectorCopy(ctx->cl.snap.ps.origin, lastOrigin);
+#endif
 			}
 		}
+
+		lastStartTime = startTime;
+		lastRaceTimer = raceTimer;
 	}
 
 	fwrite(buf, strlen(buf), 1, trailFile); //Write remaining buf to file
