@@ -29,7 +29,11 @@ data = urllib.parse.urlencode(values).encode("utf-8")
 req = urllib.request.Request(url, data)
 response = urllib.request.urlopen(req)
 page = response.read()
-json_obj = json.loads(page)
+try:
+    json_obj = json.loads(page)
+except Exception:
+    print ("Error")
+    quit()
 if not (json_obj):
     print ("No new demos available")
     quit()
@@ -43,14 +47,14 @@ count = 0
 for key in json_obj:
     count += 1
 
-    username = key[0]
+    playername = key[0]
     mapname = key[1]
     mapname = mapname.replace("/", "") 
     coursename = mapname.split('(', 1)[-1]
     coursename = coursename.rstrip(')')
     style = racenames[key[2]]
     
-    url = (hostname + username + "/" + username + "-" + mapname + "-" + style + extension)
+    url = (hostname + playername + "/" + playername + "-" + mapname + "-" + style + extension)
     url = url.replace(" ", "") # Use html escape instead
     filename = coursename + "-" + style + extension
     try:
