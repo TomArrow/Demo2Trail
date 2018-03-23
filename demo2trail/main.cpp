@@ -15,6 +15,7 @@
 #define LOOPSTARTS 0
 #define	SKIP_STILL 0
 #define METADATA 0
+#define SPEEDOMETER 0
 #define TRAIL_BUFSIZE 8192 //Write to file in 8kb chunks
 
 int main(int argc, char** argv)
@@ -158,7 +159,11 @@ int main(int argc, char** argv)
 #endif
 			{
 				char *tmpMsg = NULL;
+#if SPEEDOMETER
+				tmpMsg = va("%i\n", (int)(sqrt(ctx->cl.snap.ps.velocity[0] * ctx->cl.snap.ps.velocity[0] + ctx->cl.snap.ps.velocity[1] * ctx->cl.snap.ps.velocity[1])+0.5f));
+#else
 				tmpMsg = va("%i %i %i\n", (int)(ctx->cl.snap.ps.origin[0] + 0.5f), (int)(ctx->cl.snap.ps.origin[1] + 0.5f), (int)(ctx->cl.snap.ps.origin[2] + 0.5f));
+#endif
 				if (strlen(buf) + strlen(tmpMsg) >= sizeof(buf)) { //Write to file
 					fwrite(buf, strlen(buf), 1, trailFile);
 					Q_strncpyz(buf, "", sizeof(buf)); //buf[0] = '\0'; ?
