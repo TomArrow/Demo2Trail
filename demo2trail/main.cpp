@@ -18,6 +18,21 @@
 #define SPEEDOMETER 0
 #define TRAIL_BUFSIZE 8192 //Write to file in 8kb chunks
 
+#if SPEEDOMETER == 2
+#define	OUTPUT_EXTENSION	"srt"
+#elif
+#define	OUTPUT_EXTENSION	"cfg"
+#endif
+
+void TimeToString(int duration_ms, char *timeStr, size_t strSize) {
+	int hours, minutes, seconds, milliseconds;
+	hours = (int)((duration_ms / (1000 * 60 * 60)) % 24); //wait wut
+	minutes = (int)((duration_ms / (1000 * 60)) % 60);
+	seconds = (int)(duration_ms / 1000) % 60;
+	milliseconds = duration_ms % 1000;
+	Com_sprintf(timeStr, strSize, "%02i:%02i:%02i,%03i", hours, minutes, seconds, milliseconds);
+}
+
 int main(int argc, char** argv)
 {
 	char *demoFileName = NULL;
@@ -30,11 +45,11 @@ int main(int argc, char** argv)
 			char temp[256]; //wtf - max path?
 			COM_StripExtension(input, temp, sizeof(temp));
 			demoFileName = va("%s", input);
-			trailFileName = va("%s.cfg", temp);
+			trailFileName = va("%s.%s", temp, OUTPUT_EXTENSION);
 		}
 		else { //if no extension -fixme
 			demoFileName = va("%s.dm_26", input);
-			trailFileName = va("%s.cfg", input);
+			trailFileName = va("%s.%s", input, OUTPUT_EXTENSION);
 		}
 	}
 	else if (argc == 3) { //Input and output file specified
@@ -85,6 +100,9 @@ int main(int argc, char** argv)
 	int lastRaceTimer = 0;
 #if SKIP_STILL
 	vec3_t lastOrigin = {0};
+#endif
+#if SPEEDOMETER == 2
+	int frameCount = 0;
 #endif
 	qboolean gotInfo = qfalse;
 
@@ -159,7 +177,18 @@ int main(int argc, char** argv)
 #endif
 			{
 				char *tmpMsg = NULL;
-#if SPEEDOMETER
+#if SPEEDOMETER == 2
+				{
+				char time1[32], time2[32];
+				int speed = (int)(sqrt(ctx->cl.snap.ps.velocity[0] * ctx->cl.snap.ps.velocity[0] + ctx->cl.snap.ps.velocity[1] * ctx->cl.snap.ps.velocity[1]) + 0.5f);
+
+				TimeToString(frameCount*25, time1, sizeof(time1));
+				TimeToString((frameCount+1)*25, time2, sizeof(time1));
+
+				tmpMsg = va("%i\n%s --> %s\n%i\n\n", frameCount+1, time1, time2, speed);
+				frameCount++;
+				}
+#elif SPEEDOMETER
 				tmpMsg = va("%i\n", (int)(sqrt(ctx->cl.snap.ps.velocity[0] * ctx->cl.snap.ps.velocity[0] + ctx->cl.snap.ps.velocity[1] * ctx->cl.snap.ps.velocity[1])+0.5f));
 #else
 				tmpMsg = va("%i %i %i\n", (int)(ctx->cl.snap.ps.origin[0] + 0.5f), (int)(ctx->cl.snap.ps.origin[1] + 0.5f), (int)(ctx->cl.snap.ps.origin[2] + 0.5f));
@@ -188,4 +217,3 @@ int main(int argc, char** argv)
 
 	return 0;
 }
-
