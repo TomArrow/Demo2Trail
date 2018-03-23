@@ -40,7 +40,7 @@ if not (json_obj):
 
 #Parse json and download each demo
 hostname = "http://162.248.89.208/races/"
-racenames = ["siege", "jka", "qw", "cpm", "q3", "pjk", "wsw", "rjq3", "rjcpm", "swoop", "jetpack", "speed", "sp"]
+racenames = ["siege", "jka", "qw", "cpm", "q3", "pjk", "wsw", "rjq3", "rjcpm", "swoop", "jetpack", "speed", "sp", "slick"]
 extension = ".dm_26"
 
 count = 0
