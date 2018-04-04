@@ -20,7 +20,9 @@
 
 #if SPEEDOMETER == 2
 #define	OUTPUT_EXTENSION	"srt"
-#elif
+#elif SPEEDOMETER == 1
+#define	OUTPUT_EXTENSION	"txt"
+#else
 #define	OUTPUT_EXTENSION	"cfg"
 #endif
 
@@ -188,7 +190,7 @@ int main(int argc, char** argv)
 				tmpMsg = va("%i\n%s --> %s\n%i\n\n", frameCount+1, time1, time2, speed);
 				frameCount++;
 				}
-#elif SPEEDOMETER
+#elif SPEEDOMETER == 1
 				tmpMsg = va("%i\n", (int)(sqrt(ctx->cl.snap.ps.velocity[0] * ctx->cl.snap.ps.velocity[0] + ctx->cl.snap.ps.velocity[1] * ctx->cl.snap.ps.velocity[1])+0.5f));
 #else
 				tmpMsg = va("%i %i %i\n", (int)(ctx->cl.snap.ps.origin[0] + 0.5f), (int)(ctx->cl.snap.ps.origin[1] + 0.5f), (int)(ctx->cl.snap.ps.origin[2] + 0.5f));
