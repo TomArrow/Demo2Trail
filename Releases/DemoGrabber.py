@@ -20,7 +20,7 @@ for key in info:
         last_update = info[key]
 
 #Get json list of demos since last_update from stat_api website    
-url = 'http://162.248.89.208/stats/update.php'
+url = 'http://74.91.123.99/stats/update.php'
 values = {'type'     : 'race_demos',
           'username' : username,
           'password' : password,
@@ -39,8 +39,8 @@ if not (json_obj):
     quit()
 
 #Parse json and download each demo
-hostname = "http://162.248.89.208/races/"
-racenames = ["siege", "jka", "qw", "cpm", "q3", "pjk", "wsw", "rjq3", "rjcpm", "swoop", "jetpack", "speed", "sp", "slick"]
+hostname = "http://74.91.123.99/races/"
+racenames = ["siege", "jka", "qw", "cpm", "q3", "pjk", "wsw", "rjq3", "rjcpm", "swoop", "jetpack", "speed", "sp", "slick", "botcpm"]
 extension = ".dm_26"
 
 count = 0
