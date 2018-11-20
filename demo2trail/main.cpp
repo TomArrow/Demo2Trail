@@ -327,6 +327,9 @@ int main(int argc, char** argv)
 #if SPEEDOMETER == 2
 	int frameCount = 0;
 #endif
+#if CHATLOG
+	int chatNum = 1;
+#endif
 	qboolean gotInfo = qfalse;
 
 	while ( !demoFinished ) {
@@ -349,15 +352,17 @@ int main(int argc, char** argv)
 		}
 
 #if CHATLOG //write detected sv_fps to first line of file
-		int i;
 		if (!gotInfo)
 		{
 			const char *info = ctx->cl.gameState.stringData + ctx->cl.gameState.stringOffsets[CS_SERVERINFO];
 			char metadata[1024] = {0};
+			struct stat attr;
+			stat(demoFileName, &attr);
 
 			Q_strncpyz(metadata, va("DEMO HOSTNAME: %s\n", (Info_ValueForKey(info, "sv_hostname"))), sizeof(metadata));
 			Q_strcat(metadata, sizeof(metadata), va("DEMO MODNAME: %s\n", (Info_ValueForKey(info, "gamename"))));
 			Q_strcat(metadata, sizeof(metadata), va("DEMO MAPNAME: %s\n", (Info_ValueForKey(info, "mapname"))));
+			Q_strcat(metadata, sizeof(metadata), va("DEMO DATE: %s\n", ctime(&attr.st_mtime)));
 			Q_strcat(metadata, sizeof(metadata), "----------------------------------\n");
 			fwrite(metadata, strlen(metadata), 1, trailFile);
 			gotInfo = qtrue;
@@ -388,8 +393,8 @@ int main(int argc, char** argv)
 					RemoveStupidSquareSymbol(cmd2);
 
 					if (command == 1 || command == 2) {
-						tmpMsg = va("^0%i^7: %s\n", i, cmd2);
-						i++;
+						tmpMsg = va("^0%i^7: %s\n", chatNum, cmd2);
+						chatNum++;
 					}
 					else if (command == 3) {
 						char strEd[MAX_STRINGED_SV_STRING] = {0};
