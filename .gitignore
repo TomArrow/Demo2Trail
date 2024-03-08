@@ -14,3 +14,4 @@ ipch/
 *.suo
 *.cfg
 *.dm_26
+.vs/

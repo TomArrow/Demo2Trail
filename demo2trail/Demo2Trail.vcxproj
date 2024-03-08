@@ -95,7 +95,7 @@
     <ClCompile Include="demo_utils.cpp" />
     <ClCompile Include="..\OpenJK\codemp\qcommon\huffman.cpp" />
     <ClCompile Include="..\OpenJK\codemp\qcommon\msg.cpp" />
-    <ClCompile Include="..\OpenJK\codemp\qcommon\q_math.c" />
+    <ClCompile Include="..\OpenJK\shared\qcommon\q_math.c" />
     <ClCompile Include="..\OpenJK\codemp\qcommon\q_shared.cpp" />
   </ItemGroup>
   <ItemGroup>
