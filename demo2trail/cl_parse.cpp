@@ -4,6 +4,9 @@
 #include "client/client.h"
 #include "demo_common.h"
 
+#include "../include/rapidjson/document.h"
+#include "../include/rapidjson/writer.h"
+
 extern	cvar_t	*cl_shownet;
 
 char *svc_strings[256] = {
@@ -448,6 +451,39 @@ void CL_ParseDownload ( msg_t *msg ) {
 	MSG_WriteByte( &copy, svc_EOF );
 }
 
+const char postEOFMetadataMarker[] = { "HIDDENMETA" };
+
+
+const char* demoCutReadPossibleMetadata(msg_t* msg) {
+
+	// Normal demo readers will quit here. For all intents and purposes this demo message is over. But we're gonna put the metadata here now. Since it comes after svc_EOF, nobody will ever be bothered by it 
+	// but we can read it if we want to.
+	constexpr int metaMarkerLength = sizeof(postEOFMetadataMarker)-1;
+	// This is how the demo huffman operates. Worst case a byte can take almost 2 bytes to save, from what I understand. When reading past the end, we need to detect if we SHOULD read past the end.
+	// For each byte we need to read, thus, the message length must be at least 2 bytes longer still. Hence at the end we will artificially set the message length to be minimum that long.
+	// We will only read x amount of bytes (where x is the length of the meta marker) and see if the meta marker is present. If it is, we then proceeed to read a bigstring.
+	// This same thing is technically not true for the custom compressed types (as their size is always the real size of the data) but we'll just leave it like this to be universal and simple.
+	constexpr int maxBytePerByteSaved = 2;
+	constexpr int metaMarkerPresenceMinimumByteLengthExtra = metaMarkerLength * maxBytePerByteSaved;
+
+	const int requiredCursize = msg->readcount + metaMarkerPresenceMinimumByteLengthExtra; // We'll just set it to this value at the end if it ends up smaller.
+
+	if (msg->cursize < requiredCursize) {
+		return NULL;
+	}
+
+	for (int i = 0; i < metaMarkerLength; i++) {
+		if (msg->cursize < msg->readcount + maxBytePerByteSaved)
+		{
+			return NULL;
+		}
+		if (MSG_ReadByte(msg) != postEOFMetadataMarker[i]) {
+			return NULL;
+		}
+	}
+	return MSG_ReadBigString(msg);
+}
+
 /*
 =====================
 CL_ParseServerMessage
@@ -478,7 +514,36 @@ void CL_ParseServerMessage( msg_t *msg ) {
 
 		cmd = MSG_ReadByte( msg );
 
+		ctx->preRecordingRelated.wasFirstCommandByte = (qboolean)!ctx->preRecordingRelated.firstCommandByteRead;
+		ctx->preRecordingRelated.firstCommandByteRead = qtrue;
+
 		if ( cmd == svc_EOF) {
+			// TODO Check for svc_extension/svc_voip (ioq3/wolfcamql)
+			if (ctx->preRecordingRelated.wasFirstCommandByte) {
+				// check for hidden meta content
+				const char* maybeMeta = demoCutReadPossibleMetadata(msg);
+				if (maybeMeta) {
+
+					rapidjson::Document* jsonMetaDocument = new rapidjson::Document();
+					if (jsonMetaDocument->Parse(maybeMeta).HasParseError() || !jsonMetaDocument->IsObject()) {
+						// We won't quit demo processing over this. It's whatever. We don't wanna make a demo unusable just because it contains bad
+						// metadata. Kinda goes against the spirit. This is a different approach from above with the main metadata, where an error in that
+						// will quit the process. Because the user can after all just adjust and fix the commandline.
+						Com_Printf("Old demo appears to contain metadata, but wasn't able to parse it. Discarding.\n");
+						break;
+					}
+
+					// Copy any old values to the new meta unless they already exist.
+					if (!jsonMetaDocument) {
+						jsonMetaDocument = new rapidjson::Document();
+						jsonMetaDocument->SetObject();
+					}
+					
+					if (jsonMetaDocument->HasMember("prso")) {
+						ctx->preRecordingRelated.preRecordingStartOffset = (*jsonMetaDocument)["prso"].GetInt64();
+					}
+				}
+			}
 			SHOWNET( msg, "END OF MESSAGE" );
 			break;
 		}

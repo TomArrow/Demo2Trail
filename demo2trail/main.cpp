@@ -10,6 +10,10 @@
 #ifdef WIN32
 #include <io.h>
 #include <fcntl.h>
+#include <io.h>
+#define ftruncate(a,b) _chsize_s(_fileno(a),b)
+#elif
+#include <unistd.h>
 #endif
 
 #define LOOPSTARTS 0
@@ -332,6 +336,10 @@ int main(int argc, char** argv)
 #endif
 	qboolean gotInfo = qfalse;
 
+	qboolean firstSnapshotGotten = qfalse;
+	int	preRecordSegmentEnd = 0;
+	Com_Memset(&ctx->preRecordingRelated,0,sizeof(ctx->preRecordingRelated));
+
 	while ( !demoFinished ) {
 		msg_t msg;
 		byte msgData[ MAX_MSGLEN ];
@@ -349,6 +357,10 @@ int main(int argc, char** argv)
 
 		if ( !ctx->cl.newSnapshots ) {
 			continue;
+		}
+		if (!firstSnapshotGotten) {
+			preRecordSegmentEnd = ctx->cl.snap.serverTime + ctx->preRecordingRelated.preRecordingStartOffset;
+			firstSnapshotGotten = qtrue;
 		}
 
 #if CHATLOG //write detected sv_fps to first line of file
@@ -438,7 +450,7 @@ int main(int argc, char** argv)
 			if (startTime)
 				raceTimer = ctx->cl.snap.serverTime - startTime;
 
-			if (raceTimer > 6000) //Dont clear file if we have gone more than 6sec into run, yikes.
+			if (raceTimer > 6000 && ctx->cl.snap.serverTime >= preRecordSegmentEnd) //Dont clear file if we have gone more than 6sec into run, yikes. (unless we're still in the pre-recorded segment)
 				dontReset = qtrue;
 
 			if (startTime && !dontReset) {
@@ -449,6 +461,8 @@ int main(int argc, char** argv)
 	#endif
 				{
 					Q_strncpyz(buf, "", sizeof(buf));//Also clear entire file.. how w/o crash?
+					fseek(trailFile, 0, SEEK_SET);
+					ftruncate(trailFile,0);
 				}
 			}
 
